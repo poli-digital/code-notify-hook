@@ -1,11 +1,17 @@
 #!/usr/bin/env node
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync, copyFileSync, rmSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, copyFileSync } from 'node:fs';
+import { resolve, join, dirname } from 'node:path';
 import { homedir } from 'node:os';
+import { fileURLToPath } from 'node:url';
 import { detectOS } from './lib/detect-os.js';
+import { detectApp } from './lib/detect-app.js';
 import { commandExists } from './lib/exec.js';
-import { cleanupAll } from './lib/context.js';
+import { saveContext, cleanupAll } from './lib/context.js';
+import { readStdin, parseHookInput } from './lib/parse-hook-input.js';
+import { sendNotification } from './lib/notify/index.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // ─── Colors ──────────────────────────────────────────────────────────
 
@@ -32,12 +38,79 @@ const HOOK_ENTRY = {
   hooks: [
     {
       type: 'command',
-      command: 'code-notify-hook-hook',
+      command: 'code-notify-hook',
       timeout: 10,
       async: true,
     },
   ],
 };
+
+// ─── Hook Handler (no args — stdin JSON from Claude Code) ────────────
+
+interface Message {
+  subtitle: string;
+  message: string;
+}
+
+function buildMessage(hookEvent: string, notificationType?: string, cwd?: string): Message | null {
+  let subtitle: string;
+  let message: string;
+
+  switch (hookEvent) {
+    case 'Notification':
+      switch (notificationType) {
+        case 'permission_prompt':
+          subtitle = 'Approval Required';
+          message = 'Claude needs your permission to continue.';
+          break;
+        case 'idle_prompt':
+          subtitle = 'Waiting for Input';
+          message = 'Claude is waiting for your response.';
+          break;
+        default:
+          subtitle = 'Attention';
+          message = 'Claude needs your attention.';
+          break;
+      }
+      break;
+    case 'Stop':
+      subtitle = 'Task Complete';
+      message = 'Claude finished processing.';
+      break;
+    default:
+      return null;
+  }
+
+  if (cwd) {
+    const project = cwd.split('/').pop() ?? cwd;
+    message = `${message} [${project}]`;
+  }
+
+  return { subtitle, message };
+}
+
+async function handleHook(): Promise<void> {
+  const raw = await readStdin();
+  const input = parseHookInput(raw);
+  const msg = buildMessage(input.hook_event_name, input.notification_type, input.cwd);
+  if (!msg) process.exit(0);
+
+  const os = detectOS();
+  const app = detectApp();
+  const sessionId = input.session_id ?? 'unknown';
+
+  saveContext(sessionId, { app, cwd: input.cwd ?? process.cwd(), os });
+
+  const focusBin = resolve(__dirname, 'focus.js');
+
+  sendNotification(os, {
+    title: 'Claude Code',
+    subtitle: msg.subtitle,
+    message: msg.message,
+    sessionId,
+    focusBin: `node ${focusBin}`,
+  });
+}
 
 // ─── Install ─────────────────────────────────────────────────────────
 
@@ -250,13 +323,6 @@ switch (command) {
   case 'uninstall': uninstall(); break;
   case 'doctor':    doctor(); break;
   default:
-    console.log('');
-    console.log('  Usage: code-notify-hook <command>');
-    console.log('');
-    console.log('  Commands:');
-    console.log('    install     Install hooks into ~/.claude/settings.json');
-    console.log('    uninstall   Remove hooks and clean up');
-    console.log('    doctor      Check dependencies and configuration');
-    console.log('');
-    process.exit(command ? 1 : 0);
+    // No subcommand → hook mode (reads stdin JSON from Claude Code)
+    handleHook().catch(() => process.exit(0));
 }

@@ -5,7 +5,6 @@
   "type": "module",
   "bin": {
     "code-notify-hook": "./dist/cli.js",
-    "code-notify-hook-hook": "./dist/hook.js",
     "code-notify-hook-focus": "./dist/focus.js"
   },
   "scripts": {

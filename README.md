@@ -122,7 +122,7 @@ Two hooks are registered:
 Claude Code emits event
   │
   ▼
-code-notify-hook-hook (reads JSON from stdin)
+code-notify-hook (reads JSON from stdin)
   ├── Parses the event (Notification / Stop)
   ├── Detects the OS (macOS / Linux / WSL)
   ├── Detects the host app via TERM_PROGRAM env var
@@ -172,7 +172,7 @@ The installer adds this to `~/.claude/settings.json`:
         "hooks": [
           {
             "type": "command",
-            "command": "code-notify-hook-hook",
+            "command": "code-notify-hook",
             "timeout": 10,
             "async": true
           }
@@ -185,7 +185,7 @@ The installer adds this to `~/.claude/settings.json`:
         "hooks": [
           {
             "type": "command",
-            "command": "code-notify-hook-hook",
+            "command": "code-notify-hook",
             "timeout": 10,
             "async": true
           }
