@@ -135,6 +135,8 @@ FOCUS_SCRIPT="$HOOKS_DIR/focus-session.sh"
 case "$OS" in
 
   macos)
+    # terminal-notifier: adds to Notification Center + enables click-to-focus.
+    # May be silenced by Focus/DnD — kept for history and when Focus is off.
     if command -v terminal-notifier &>/dev/null; then
       terminal-notifier \
         -title "Claude Code" \
@@ -145,9 +147,15 @@ case "$OS" in
         -group "claude-code-${SESSION_ID:-default}" \
         -ignoreDnD \
         > /dev/null 2>&1 &
-    else
-      # Fallback: native osascript (no click-to-focus)
-      osascript -e "display notification \"$MESSAGE\" with title \"Claude Code\" subtitle \"$TITLE\" sound name \"default\"" &
+    fi
+
+    # Focus/DnD bypass: `display alert` creates a real window (not a
+    # notification), so it always appears on screen regardless of any
+    # Focus mode. Auto-dismisses after a few seconds.
+    # Set CLAUDE_NOTIFY_NO_ALERT=1 to disable this and rely solely
+    # on terminal-notifier / native notifications.
+    if [ "${CLAUDE_NOTIFY_NO_ALERT:-}" != "1" ]; then
+      osascript -e "display alert \"Claude Code — $TITLE\" message \"$MESSAGE\" giving up after 8" > /dev/null 2>&1 &
     fi
     ;;
 

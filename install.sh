@@ -1,14 +1,13 @@
 #!/usr/bin/env bash
 # claude-code-notify — Installer
 #
-# Detects the OS, checks dependencies, copies hook scripts to
-# ~/.claude/hooks/ and patches ~/.claude/settings.json.
+# Detects the OS, checks dependencies, ensures hook scripts are
+# executable and patches ~/.claude/settings.json.
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-HOOKS_SRC="$SCRIPT_DIR/hooks"
-HOOKS_DST="$HOME/.claude/hooks"
+HOOKS_DIR="$SCRIPT_DIR/hooks"
 SETTINGS="$HOME/.claude/settings.json"
 
 # ─── Colors ───────────────────────────────────────────────────────────
@@ -131,30 +130,28 @@ if [ "$OS" = "linux" ]; then
   fi
 fi
 
-# ─── Copy hook scripts ───────────────────────────────────────────────
+# ─── Ensure hook scripts are executable ─────────────────────────────
 
-info "Installing hooks to $HOOKS_DST ..."
+chmod +x "$HOOKS_DIR/notify.sh" "$HOOKS_DIR/focus-session.sh"
 
-mkdir -p "$HOOKS_DST"
-cp "$HOOKS_SRC/notify.sh" "$HOOKS_DST/notify.sh"
-cp "$HOOKS_SRC/focus-session.sh" "$HOOKS_DST/focus-session.sh"
-chmod +x "$HOOKS_DST/notify.sh" "$HOOKS_DST/focus-session.sh"
-
-ok "Hook scripts installed."
+ok "Hook scripts ready at $HOOKS_DIR"
 
 # ─── Patch settings.json ─────────────────────────────────────────────
 
-HOOK_ENTRY='{
+HOOK_ENTRY="$(cat <<EOF
+{
   "matcher": "",
   "hooks": [
     {
       "type": "command",
-      "command": "$HOME/.claude/hooks/notify.sh",
+      "command": "$HOOKS_DIR/notify.sh",
       "timeout": 10,
       "async": true
     }
   ]
-}'
+}
+EOF
+)"
 
 info "Configuring Claude Code hooks in $SETTINGS ..."
 
@@ -204,16 +201,92 @@ echo ""
 echo "  Restart Claude Code to activate."
 echo ""
 
-# ─── Verify ──────────────────────────────────────────────────────────
+# ─── Welcome notification ────────────────────────────────────────────
 
-info "Running quick verification..."
+info "Sending welcome notification..."
 
-TEST_RESULT=$(echo '{"hook_event_name":"Stop","cwd":"/tmp/test","session_id":"install-test"}' \
-  | "$HOOKS_DST/notify.sh" 2>&1 && echo "PASS" || echo "FAIL")
+WELCOME_TITLE="Setup Complete"
+WELCOME_MSG="Notifications are working! You'll be notified when Claude needs attention."
 
-if echo "$TEST_RESULT" | grep -q "PASS"; then
-  ok "Verification passed — notification sent!"
-  rm -f /tmp/claude-code-notify/install-test
+case "$OS" in
+  macos)
+    if command -v terminal-notifier &>/dev/null; then
+      terminal-notifier \
+        -title "Claude Code" \
+        -subtitle "$WELCOME_TITLE" \
+        -message "$WELCOME_MSG" \
+        -sound default \
+        -group "claude-code-welcome" \
+        -ignoreDnD \
+        > /dev/null 2>&1
+    fi
+    # Always show alert dialog (bypasses Focus/DnD)
+    osascript -e "display alert \"Claude Code — $WELCOME_TITLE\" message \"$WELCOME_MSG\" giving up after 8" > /dev/null 2>&1
+    ;;
+  linux)
+    if command -v notify-send &>/dev/null; then
+      notify-send "Claude Code — $WELCOME_TITLE" "$WELCOME_MSG" \
+        --app-name="Claude Code" \
+        --icon=terminal 2>/dev/null
+    fi
+    ;;
+  wsl)
+    PS_TITLE="Claude Code - $WELCOME_TITLE"
+    powershell.exe -NoProfile -NonInteractive -Command "
+      try {
+        [void][Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime];
+        [void][Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime];
+        \$xml = New-Object Windows.Data.Xml.Dom.XmlDocument;
+        \$xml.LoadXml('<toast><visual><binding template=\"ToastGeneric\"><text>$PS_TITLE</text><text>$WELCOME_MSG</text></binding></visual></toast>');
+        [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier('Claude Code').Show([Windows.UI.Notifications.ToastNotification]::new(\$xml));
+      } catch {
+        Add-Type -AssemblyName System.Windows.Forms;
+        \$n = New-Object System.Windows.Forms.NotifyIcon;
+        \$n.Icon = [System.Drawing.SystemIcons]::Information;
+        \$n.BalloonTipTitle = '$PS_TITLE';
+        \$n.BalloonTipText = '$WELCOME_MSG';
+        \$n.Visible = \$true;
+        \$n.ShowBalloonTip(5000);
+        Start-Sleep -Milliseconds 5500;
+        \$n.Dispose();
+      }
+    " > /dev/null 2>&1
+    ;;
+esac
+
+echo ""
+echo "  Did you see the notification?"
+echo ""
+
+read -r -p "  [Y] Yes, it worked  [n] No, I didn't see it: " SAW_NOTIF
+SAW_NOTIF="${SAW_NOTIF:-Y}"
+
+if [[ "$SAW_NOTIF" =~ ^[Yy]$ ]]; then
+  ok "You're all set!"
 else
-  warn "Verification returned unexpected output. Check the logs above."
+  warn "The notification may be going to the Notification Center only."
+
+  if [ "$OS" = "macos" ]; then
+    echo ""
+    echo "  To fix this on macOS:"
+    echo ""
+    echo "    1. Open System Settings → Notifications → terminal-notifier"
+    echo "    2. Set notification style to \"Alerts\" (stays on screen)"
+    echo "       or \"Banners\" (auto-dismisses after a few seconds)"
+    echo "    3. Make sure \"Allow Notifications\" is ON"
+    echo ""
+
+    read -r -p "  Open Notification Settings now? [Y/n] " OPEN_SETTINGS
+    OPEN_SETTINGS="${OPEN_SETTINGS:-Y}"
+    if [[ "$OPEN_SETTINGS" =~ ^[Yy]$ ]]; then
+      open "x-apple.systempreferences:com.apple.Notifications-Settings"
+      info "Settings opened — look for \"terminal-notifier\" in the list."
+    fi
+  elif [ "$OS" = "linux" ]; then
+    echo ""
+    echo "  Check that your desktop environment's notification daemon is running."
+    echo "  Common daemons: dunst, mako, swaync, notify-osd."
+  fi
 fi
+
+rm -f /tmp/claude-code-notify/install-test 2>/dev/null

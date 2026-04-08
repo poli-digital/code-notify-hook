@@ -5,7 +5,6 @@
 
 set -euo pipefail
 
-HOOKS_DST="$HOME/.claude/hooks"
 SETTINGS="$HOME/.claude/settings.json"
 
 RED='\033[0;31m'
@@ -20,17 +19,6 @@ echo ""
 echo "  claude-code-notify uninstaller"
 echo "  ──────────────────────────────"
 echo ""
-
-# Remove hook scripts
-if [ -f "$HOOKS_DST/notify.sh" ]; then
-  rm "$HOOKS_DST/notify.sh"
-  ok "Removed $HOOKS_DST/notify.sh"
-fi
-
-if [ -f "$HOOKS_DST/focus-session.sh" ]; then
-  rm "$HOOKS_DST/focus-session.sh"
-  ok "Removed $HOOKS_DST/focus-session.sh"
-fi
 
 # Clean up settings.json
 if [ -f "$SETTINGS" ] && command -v jq &>/dev/null; then
