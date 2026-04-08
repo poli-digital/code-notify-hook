@@ -1,0 +1,16 @@
+name: code-hook-notify
+id: ari:cloud:compass:d1d9f267-e2bb-4eba-889f-94028c5b05c4:component/5053650e-af41-4103-937c-7f83369b6aab/31690c1b-b7ad-4ecd-8eb6-ff53fd46b16b
+description: Cross-platform desktop notifications for Claude Code
+configVersion: 1
+typeId: SERVICE
+fields:
+  tier: 4
+links:
+  - name: null
+    type: REPOSITORY
+    url: https://github.com/poli-digital/code-hook-notify
+relationships:
+  DEPENDS_ON: []
+labels:
+  - source:github
+customFields: null
