@@ -4,7 +4,7 @@ import type { SessionContext } from '../types.js';
 
 const CONTEXT_DIR = join(
   process.env['TMPDIR'] ?? process.env['TMP'] ?? '/tmp',
-  'code-hook-notify',
+  'code-notify-hook',
 );
 
 function contextPath(sessionId: string): string {

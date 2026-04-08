@@ -32,7 +32,7 @@ const HOOK_ENTRY = {
   hooks: [
     {
       type: 'command',
-      command: 'code-hook-notify-hook',
+      command: 'code-notify-hook-hook',
       timeout: 10,
       async: true,
     },
@@ -43,7 +43,7 @@ const HOOK_ENTRY = {
 
 function install(): void {
   console.log('');
-  console.log('  code-hook-notify installer');
+  console.log('  code-notify-hook installer');
   console.log('  ─────────────────────────');
   console.log('');
 
@@ -125,7 +125,7 @@ function install(): void {
     settings.hooks.Stop ??= [];
 
     const hasHook = (arr: Array<{ hooks?: Array<{ command?: string }> }>) =>
-      arr.some((entry) => entry.hooks?.some((h) => String(h.command ?? '').includes('code-hook-notify')));
+      arr.some((entry) => entry.hooks?.some((h) => String(h.command ?? '').includes('code-notify-hook')));
 
     if (!hasHook(settings.hooks.Notification)) {
       settings.hooks.Notification.push(HOOK_ENTRY);
@@ -153,7 +153,7 @@ function install(): void {
 
 function uninstall(): void {
   console.log('');
-  console.log('  code-hook-notify uninstaller');
+  console.log('  code-notify-hook uninstaller');
   console.log('  ───────────────────────────');
   console.log('');
 
@@ -166,7 +166,7 @@ function uninstall(): void {
 
     if (settings.hooks) {
       const filterHooks = (arr: Array<{ hooks?: Array<{ command?: string }> }>) =>
-        arr.filter((entry) => !entry.hooks?.some((h) => String(h.command ?? '').includes('code-hook-notify')));
+        arr.filter((entry) => !entry.hooks?.some((h) => String(h.command ?? '').includes('code-notify-hook')));
 
       if (settings.hooks.Notification) {
         settings.hooks.Notification = filterHooks(settings.hooks.Notification);
@@ -195,7 +195,7 @@ function uninstall(): void {
 
 function doctor(): void {
   console.log('');
-  console.log('  code-hook-notify doctor');
+  console.log('  code-notify-hook doctor');
   console.log('  ──────────────────────');
   console.log('');
 
@@ -225,17 +225,17 @@ function doctor(): void {
     try {
       const settings = JSON.parse(readFileSync(SETTINGS_PATH, 'utf-8'));
       const hasNotif = settings.hooks?.Notification?.some((e: { hooks?: Array<{ command?: string }> }) =>
-        e.hooks?.some((h) => String(h.command ?? '').includes('code-hook-notify')));
+        e.hooks?.some((h) => String(h.command ?? '').includes('code-notify-hook')));
       const hasStop = settings.hooks?.Stop?.some((e: { hooks?: Array<{ command?: string }> }) =>
-        e.hooks?.some((h) => String(h.command ?? '').includes('code-hook-notify')));
+        e.hooks?.some((h) => String(h.command ?? '').includes('code-notify-hook')));
 
       if (hasNotif && hasStop) ok('Hooks configured in settings.json');
-      else warn('Hooks partially configured — run "code-hook-notify install"');
+      else warn('Hooks partially configured — run "code-notify-hook install"');
     } catch {
       error('settings.json is not valid JSON');
     }
   } else {
-    warn('~/.claude/settings.json not found — run "code-hook-notify install"');
+    warn('~/.claude/settings.json not found — run "code-notify-hook install"');
   }
 
   console.log('');
@@ -251,7 +251,7 @@ switch (command) {
   case 'doctor':    doctor(); break;
   default:
     console.log('');
-    console.log('  Usage: code-hook-notify <command>');
+    console.log('  Usage: code-notify-hook <command>');
     console.log('');
     console.log('  Commands:');
     console.log('    install     Install hooks into ~/.claude/settings.json');

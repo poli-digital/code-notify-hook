@@ -9,7 +9,7 @@ export function notifyMacOS(payload: NotificationPayload): void {
       '-message', payload.message,
       '-sound', 'default',
       '-execute', `${payload.focusBin} ${payload.sessionId}`,
-      '-group', `code-hook-notify-${payload.sessionId}`,
+      '-group', `code-notify-hook-${payload.sessionId}`,
       '-ignoreDnD',
     ]);
   } else {

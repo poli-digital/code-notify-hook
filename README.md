@@ -1,4 +1,4 @@
-# code-hook-notify
+# code-notify-hook
 
 Native push notifications for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Get notified when Claude needs your approval or finishes a task — click the notification to jump straight to the right window.
 
@@ -59,8 +59,8 @@ Click-to-focus finds the right window by project directory, not just the app.
 ### Install
 
 ```bash
-npm install -g code-hook-notify
-code-hook-notify install
+npm install -g code-notify-hook
+code-notify-hook install
 ```
 
 The `install` command will:
@@ -93,14 +93,14 @@ sudo pacman -S libnotify xdotool
 ### Uninstall
 
 ```bash
-code-hook-notify uninstall
-npm uninstall -g code-hook-notify
+code-notify-hook uninstall
+npm uninstall -g code-notify-hook
 ```
 
 ### Health Check
 
 ```bash
-code-hook-notify doctor
+code-notify-hook doctor
 ```
 
 Checks all dependencies and verifies hooks are configured.
@@ -122,16 +122,16 @@ Two hooks are registered:
 Claude Code emits event
   │
   ▼
-code-hook-notify-hook (reads JSON from stdin)
+code-notify-hook-hook (reads JSON from stdin)
   ├── Parses the event (Notification / Stop)
   ├── Detects the OS (macOS / Linux / WSL)
   ├── Detects the host app via TERM_PROGRAM env var
   │   (fallback: walks the process tree)
-  ├── Saves session context to /tmp/code-hook-notify/{session_id}.json
+  ├── Saves session context to /tmp/code-notify-hook/{session_id}.json
   └── Sends a native notification
         │
         ▼ (user clicks)
-      code-hook-notify-focus
+      code-notify-hook-focus
         ├── Reads session context (app + directory + OS)
         └── Focuses the correct window:
               ├── IDEs: CLI command (code/zed/cursor $CWD)
@@ -172,7 +172,7 @@ The installer adds this to `~/.claude/settings.json`:
         "hooks": [
           {
             "type": "command",
-            "command": "code-hook-notify-hook",
+            "command": "code-notify-hook-hook",
             "timeout": 10,
             "async": true
           }
@@ -185,7 +185,7 @@ The installer adds this to `~/.claude/settings.json`:
         "hooks": [
           {
             "type": "command",
-            "command": "code-hook-notify-hook",
+            "command": "code-notify-hook-hook",
             "timeout": 10,
             "async": true
           }
@@ -231,7 +231,7 @@ To only get notified when Claude needs input (not on every stop), remove the `St
 ### Hook doesn't fire
 
 - Verify hooks are configured: run `/hooks` inside Claude Code
-- Check settings: `code-hook-notify doctor`
+- Check settings: `code-notify-hook doctor`
 - Restart Claude Code after changing settings
 
 ## Contributing
