@@ -1,0 +1,40 @@
+# claude-code-notify — Configuration
+#
+# This file is sourced by notify.sh on every notification.
+# Copy it to ~/.config/claude-code-notify/config and edit as needed.
+#
+# The installer creates this file automatically. Values shown below
+# are the defaults — uncomment and change only what you need.
+#
+# Syntax: standard shell variable assignments (no spaces around '=').
+
+# ─── macOS: Display Alert ─────────────────────────────────────────
+# Show a system alert dialog that bypasses Focus / Do Not Disturb.
+# The alert appears as a floating window and auto-dismisses after
+# NOTIFY_ALERT_TIMEOUT seconds. Useful when Focus mode silences
+# Notification Center.
+# Set to false to rely solely on terminal-notifier.
+# (macOS only — ignored on Linux and WSL)
+NOTIFY_ALERT=false
+
+# How many seconds the alert stays on screen before auto-dismissing.
+# (macOS only, requires NOTIFY_ALERT=true)
+#NOTIFY_ALERT_TIMEOUT=5
+
+# ─── Notification Sound ───────────────────────────────────────────
+# Sound to play with the notification.
+#
+# macOS values: "default", "Basso", "Blow", "Bottle", "Frog", "Funk",
+#               "Glass", "Hero", "Morse", "Ping", "Pop", "Purr",
+#               "Sosumi", "Submarine", "Tink"
+# Linux:        depends on your notification daemon (usually ignored).
+# WSL:          system default (cannot be customised here).
+#
+# Set to "" (empty) to disable sound.
+#NOTIFY_SOUND="default"
+
+# ─── Do Not Disturb Bypass ────────────────────────────────────────
+# Attempt to deliver the notification even when Focus / Do Not Disturb
+# is active. Uses terminal-notifier's -ignoreDnD flag.
+# (macOS only — ignored on Linux and WSL)
+NOTIFY_DND_BYPASS=false

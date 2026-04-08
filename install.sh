@@ -9,6 +9,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 HOOKS_DIR="$SCRIPT_DIR/hooks"
 SETTINGS="$HOME/.claude/settings.json"
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/claude-code-notify"
+CONFIG_FILE="$CONFIG_DIR/config"
 
 # ─── Colors ───────────────────────────────────────────────────────────
 
@@ -189,6 +191,17 @@ else
   ok "Updated $SETTINGS with notification hooks."
 fi
 
+# ─── Create config file ─────────────────────────────────────────────
+
+mkdir -p "$CONFIG_DIR"
+
+if [ ! -f "$CONFIG_FILE" ]; then
+  cp "$SCRIPT_DIR/config.defaults" "$CONFIG_FILE"
+  ok "Created config file at $CONFIG_FILE"
+else
+  info "Config file already exists at $CONFIG_FILE — skipping."
+fi
+
 # ─── Done ─────────────────────────────────────────────────────────────
 
 echo ""
@@ -198,6 +211,9 @@ echo "  Hooks installed:"
 echo "    - Notification  → push notification when Claude needs input"
 echo "    - Stop          → push notification when Claude finishes"
 echo ""
+echo "  Config file: $CONFIG_FILE"
+echo "  Edit it to customise alerts, sounds, and DnD bypass."
+echo ""
 echo "  Restart Claude Code to activate."
 echo ""
 
@@ -205,23 +221,35 @@ echo ""
 
 info "Sending welcome notification..."
 
+# Load config for welcome notification
+NOTIFY_ALERT=true
+NOTIFY_ALERT_TIMEOUT=8
+NOTIFY_SOUND="default"
+NOTIFY_DND_BYPASS=true
+# shellcheck disable=SC1090
+[ -f "$CONFIG_FILE" ] && . "$CONFIG_FILE"
+
 WELCOME_TITLE="Setup Complete"
 WELCOME_MSG="Notifications are working! You'll be notified when Claude needs attention."
 
 case "$OS" in
   macos)
     if command -v terminal-notifier &>/dev/null; then
-      terminal-notifier \
-        -title "Claude Code" \
-        -subtitle "$WELCOME_TITLE" \
-        -message "$WELCOME_MSG" \
-        -sound default \
-        -group "claude-code-welcome" \
-        -ignoreDnD \
-        > /dev/null 2>&1
+      TN_ARGS=(
+        -title "Claude Code"
+        -subtitle "$WELCOME_TITLE"
+        -message "$WELCOME_MSG"
+        -group "claude-code-welcome"
+      )
+      [ -n "$NOTIFY_SOUND" ]             && TN_ARGS+=(-sound "$NOTIFY_SOUND")
+      [ "$NOTIFY_DND_BYPASS" = "true" ]  && TN_ARGS+=(-ignoreDnD)
+
+      terminal-notifier "${TN_ARGS[@]}" > /dev/null 2>&1
     fi
-    # Always show alert dialog (bypasses Focus/DnD)
-    osascript -e "display alert \"Claude Code — $WELCOME_TITLE\" message \"$WELCOME_MSG\" giving up after 8" > /dev/null 2>&1
+    # Alert dialog (bypasses Focus/DnD)
+    if [ "$NOTIFY_ALERT" = "true" ]; then
+      osascript -e "display alert \"Claude Code — $WELCOME_TITLE\" message \"$WELCOME_MSG\" giving up after $NOTIFY_ALERT_TIMEOUT" > /dev/null 2>&1
+    fi
     ;;
   linux)
     if command -v notify-send &>/dev/null; then

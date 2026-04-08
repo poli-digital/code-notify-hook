@@ -67,7 +67,8 @@ The installer will:
 1. Check that all dependencies are present
 2. Copy hook scripts to `~/.claude/hooks/`
 3. Add hook entries to `~/.claude/settings.json` (creates a backup first)
-4. Run a quick verification
+4. Create a config file at `~/.config/claude-code-notify/config`
+5. Run a quick verification
 
 ### Install dependencies (if needed)
 
@@ -160,6 +161,38 @@ If `TERM_PROGRAM` is not set, the script walks up the process tree (`$PPID` → 
 
 ## Configuration
 
+### Config file
+
+The installer creates a config file at `~/.config/claude-code-notify/config` (respects `$XDG_CONFIG_HOME`). Edit it to customise notification behaviour — no need to touch the hook scripts.
+
+All options with their defaults:
+
+```bash
+# Show a macOS alert dialog that bypasses Focus / Do Not Disturb.
+# Set to false to rely solely on Notification Center.
+# (macOS only)
+NOTIFY_ALERT=true
+
+# Seconds the alert stays on screen before auto-dismissing.
+# (macOS only, requires NOTIFY_ALERT=true)
+NOTIFY_ALERT_TIMEOUT=8
+
+# Sound to play with the notification.
+# macOS: "default", "Basso", "Blow", "Bottle", "Frog", "Funk",
+#        "Glass", "Hero", "Morse", "Ping", "Pop", "Purr",
+#        "Sosumi", "Submarine", "Tink"
+# Set to "" to disable sound.
+NOTIFY_SOUND="default"
+
+# Bypass Focus / Do Not Disturb via terminal-notifier's -ignoreDnD.
+# (macOS only)
+NOTIFY_DND_BYPASS=true
+```
+
+Options are commented out by default — uncomment and change only what you need.
+
+> **Tip:** the config file is a plain shell script sourced at runtime, so changes take effect on the next notification with no restart required.
+
 ### settings.json
 
 The installer adds this to `~/.claude/settings.json`:
@@ -201,14 +234,6 @@ The installer adds this to `~/.claude/settings.json`:
 
 To only get notified when Claude needs input (not on every stop), remove the `Stop` entry from `hooks` in your settings.
 
-### Custom notification sound (macOS)
-
-Edit `hooks/notify.sh` and change the `-sound` parameter:
-
-```bash
-terminal-notifier ... -sound "Ping"    # or "Basso", "Blow", "Pop", etc.
-```
-
 ## Troubleshooting
 
 ### Notifications don't appear
@@ -216,7 +241,7 @@ terminal-notifier ... -sound "Ping"    # or "Basso", "Blow", "Pop", etc.
 **macOS:**
 - Check that `terminal-notifier` is installed: `which terminal-notifier`
 - Check System Settings > Notifications > terminal-notifier is allowed
-- Verify Do Not Disturb is off (the `-ignoreDnD` flag bypasses Focus modes, but some configurations may still block)
+- Verify Do Not Disturb is off (the `NOTIFY_DND_BYPASS` and `NOTIFY_ALERT` options bypass Focus modes, but some configurations may still block — see [Config file](#config-file))
 
 **Linux:**
 - Check that `notify-send` is installed: `which notify-send`

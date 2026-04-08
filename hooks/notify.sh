@@ -9,6 +9,17 @@
 
 set -euo pipefail
 
+# ─── Load configuration ────────────────────────────────────────────
+
+NOTIFY_ALERT=true
+NOTIFY_ALERT_TIMEOUT=8
+NOTIFY_SOUND="default"
+NOTIFY_DND_BYPASS=true
+
+CONFIG_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/claude-code-notify/config"
+# shellcheck disable=SC1090
+[ -f "$CONFIG_FILE" ] && . "$CONFIG_FILE"
+
 # ─── Parse hook input (JSON on stdin) ────────────────────────────────
 
 INPUT=$(cat)
@@ -138,24 +149,25 @@ case "$OS" in
     # terminal-notifier: adds to Notification Center + enables click-to-focus.
     # May be silenced by Focus/DnD — kept for history and when Focus is off.
     if command -v terminal-notifier &>/dev/null; then
-      terminal-notifier \
-        -title "Claude Code" \
-        -subtitle "$TITLE" \
-        -message "$MESSAGE" \
-        -sound default \
-        -execute "'$FOCUS_SCRIPT' '$SESSION_ID'" \
-        -group "claude-code-${SESSION_ID:-default}" \
-        -ignoreDnD \
-        > /dev/null 2>&1 &
+      TN_ARGS=(
+        -title "Claude Code"
+        -subtitle "$TITLE"
+        -message "$MESSAGE"
+        -execute "'$FOCUS_SCRIPT' '$SESSION_ID'"
+        -group "claude-code-${SESSION_ID:-default}"
+      )
+      [ -n "$NOTIFY_SOUND" ]             && TN_ARGS+=(-sound "$NOTIFY_SOUND")
+      [ "$NOTIFY_DND_BYPASS" = "true" ]  && TN_ARGS+=(-ignoreDnD)
+
+      terminal-notifier "${TN_ARGS[@]}" > /dev/null 2>&1 &
     fi
 
     # Focus/DnD bypass: `display alert` creates a real window (not a
     # notification), so it always appears on screen regardless of any
-    # Focus mode. Auto-dismisses after a few seconds.
-    # Set CLAUDE_NOTIFY_NO_ALERT=1 to disable this and rely solely
-    # on terminal-notifier / native notifications.
-    if [ "${CLAUDE_NOTIFY_NO_ALERT:-}" != "1" ]; then
-      osascript -e "display alert \"Claude Code — $TITLE\" message \"$MESSAGE\" giving up after 8" > /dev/null 2>&1 &
+    # Focus mode. Auto-dismisses after NOTIFY_ALERT_TIMEOUT seconds.
+    # Disable via NOTIFY_ALERT=false in the config file.
+    if [ "$NOTIFY_ALERT" = "true" ]; then
+      osascript -e "display alert \"Claude Code — $TITLE\" message \"$MESSAGE\" giving up after $NOTIFY_ALERT_TIMEOUT" > /dev/null 2>&1 &
     fi
     ;;
 
