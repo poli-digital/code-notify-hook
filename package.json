@@ -1,0 +1,38 @@
+{
+  "name": "code-hook-notify",
+  "version": "1.0.0",
+  "description": "Native push notifications for Claude Code — click to focus the exact IDE window",
+  "type": "module",
+  "bin": {
+    "code-hook-notify": "./dist/cli.js",
+    "code-hook-notify-hook": "./dist/hook.js",
+    "code-hook-notify-focus": "./dist/focus.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "claude-code",
+    "notifications",
+    "hooks",
+    "push-notifications",
+    "macos",
+    "linux",
+    "wsl"
+  ],
+  "author": "Gabriel Henrique",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  }
+}
