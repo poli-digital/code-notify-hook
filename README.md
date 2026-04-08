@@ -1,4 +1,4 @@
-# claude-code-notify
+# code-notify-hook
 
 Native push notifications for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Get notified when Claude needs your approval or finishes a task — click the notification to jump straight to the right window.
 
@@ -58,8 +58,8 @@ Click-to-focus finds the right window by project directory, not just the app.
 ### Install
 
 ```bash
-git clone https://github.com/gabrielhenrique/claude-code-notify.git
-cd claude-code-notify
+git clone https://github.com/poli-digital/code-notify-hook.git
+cd code-notify-hook
 bash install.sh
 ```
 
@@ -67,7 +67,7 @@ The installer will:
 1. Check that all dependencies are present
 2. Copy hook scripts to `~/.claude/hooks/`
 3. Add hook entries to `~/.claude/settings.json` (creates a backup first)
-4. Create a config file at `~/.config/claude-code-notify/config`
+4. Create a config file at `~/.config/code-notify-hook/config`
 5. Run a quick verification
 
 ### Install dependencies (if needed)
@@ -101,7 +101,7 @@ sudo apt install jq
 ### Uninstall
 
 ```bash
-cd claude-code-notify
+cd code-notify-hook
 bash uninstall.sh
 ```
 
@@ -127,7 +127,7 @@ notify.sh (hook script)
   ├── Detects the OS (macOS / Linux / WSL)
   ├── Detects the host app via TERM_PROGRAM env var
   │   (fallback: walks the process tree)
-  ├── Saves session context to /tmp/claude-code-notify/{session_id}
+  ├── Saves session context to /tmp/code-notify-hook/{session_id}
   └── Sends a native notification
         │
         ▼ (user clicks)
@@ -163,7 +163,7 @@ If `TERM_PROGRAM` is not set, the script walks up the process tree (`$PPID` → 
 
 ### Config file
 
-The installer creates a config file at `~/.config/claude-code-notify/config` (respects `$XDG_CONFIG_HOME`). Edit it to customise notification behaviour — no need to touch the hook scripts.
+The installer creates a config file at `~/.config/code-notify-hook/config` (respects `$XDG_CONFIG_HOME`). Edit it to customise notification behaviour — no need to touch the hook scripts.
 
 All options with their defaults:
 
